@@ -3,7 +3,6 @@ import { BriefcaseIcon, UserGroupIcon, AcademicCapIcon } from '@heroicons/react/
 export default function Hero() {
   return (
     <section className="relative flex items-center min-h-screen overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white">
-      {/* Decorative glows */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_40%,rgba(79,70,229,0.15),transparent_50%)]"></div>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_60%,rgba(14,165,233,0.1),transparent_50%)]"></div>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(99,102,241,0.15),transparent_60%)]"></div>
@@ -17,7 +16,6 @@ export default function Hero() {
           Find top talent, manage candidates efficiently, and build smarter assessments — all in one unified platform.
         </p>
 
-        {/* Feature Icons */}
         <div className="flex justify-center items-center space-x-8 mt-12">
           <div className="flex flex-col items-center">
             <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-3">

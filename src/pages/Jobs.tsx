@@ -30,78 +30,58 @@ interface DraggableJobCardProps {
 const DraggableJobCard = ({ job, index, candidateCount, onEdit, onArchive, onDelete, onMove, navigate }: DraggableJobCardProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const originalIndexRef = useRef<number>(index);
+  const hoveredOverRef = useRef<number | null>(null);
 
   const [{ isDragging }, drag] = useDrag(
     () => ({
       type: ITEM_TYPE,
       item: () => {
         originalIndexRef.current = index;
+        hoveredOverRef.current = null;
         return { id: job.id, index } as DragItem;
       },
       collect: (monitor) => ({
         isDragging: monitor.isDragging(),
       }),
-      end: () => {
-        // Drag ended
+      end: (_, monitor) => {
+        // If drop was successful, monitor.getDropResult() will have the result
+        const dropResult = monitor.getDropResult() as { dragIndex: number; hoverIndex: number } | null;
+        if (dropResult && dropResult.dragIndex !== dropResult.hoverIndex) {
+          onMove(dropResult.dragIndex, dropResult.hoverIndex);
+        } else if (hoveredOverRef.current !== null && hoveredOverRef.current !== index) {
+          onMove(index, hoveredOverRef.current);
+        }
       },
     }),
-    [job.id, index]
+    [job.id, index, onMove]
   );
 
   const [, drop] = useDrop(
     () => ({
       accept: ITEM_TYPE,
-      hover: (item: DragItem, monitor) => {
-        if (!ref.current) return;
-
+      hover: (item: DragItem) => {
+        // Track which card is being hovered over
         const dragIndex = item.index;
         const hoverIndex = index;
         
-        // Don't replace items with themselves
         if (dragIndex === hoverIndex) return;
-
-        // Determine rectangle on screen
-        const hoverBoundingRect = ref.current.getBoundingClientRect();
         
-        // Get vertical middle
-        const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
-        
-        // Determine mouse position
-        const clientOffset = monitor.getClientOffset();
-        if (!clientOffset) return;
-        
-        // Get pixels to the top
-        const hoverClientY = clientOffset.y - hoverBoundingRect.top;
-        
-        // Only perform the move when the mouse has crossed half of the items height
-        // When dragging downwards, only move when the cursor is below 50%
-        // When dragging upwards, only move when the cursor is above 50%
-        
-        // Dragging downwards
-        if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
-          return;
-        }
-        
-        // Dragging upwards
-        if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) {
-          return;
-        }
-        
-        // Time to actually perform the action
-        item.index = hoverIndex;
+        // Store the hovered index so we can use it in the end handler
+        hoveredOverRef.current = hoverIndex;
       },
-      drop: () => {
-        // Only call onMove when the drop actually happens
-        const dragIndex = originalIndexRef.current;
+      drop: (item: DragItem) => {
+        // Get dragIndex from the item, not from this card's ref
+        const dragIndex = item.index;
         const hoverIndex = index;
-        if (dragIndex !== hoverIndex) {
-          onMove(dragIndex, hoverIndex);
-        }
+        
+        // Return the result so the end handler can use it
+        return { dragIndex, hoverIndex };
       },
     }),
-    [index, onMove]
+    [index]
   );
 
+  // Attach drag and drop to the same ref
   drag(drop(ref));
 
   return (
@@ -145,15 +125,16 @@ const DraggableJobCard = ({ job, index, candidateCount, onEdit, onArchive, onDel
             ))}
           </div>
         </div>
-        <div className="flex gap-2 ml-4">
-          <button onClick={() => navigate(`/jobs/${job.id}`)} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+        <div className="flex gap-2 ml-4" onMouseDown={(e) => e.stopPropagation()}>
+          <button onClick={() => navigate(`/jobs/${job.id}`)} onDragStart={(e) => e.preventDefault()} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
             View
           </button>
-          <button onClick={() => onEdit(job)} className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+          <button onClick={() => onEdit(job)} onDragStart={(e) => e.preventDefault()} className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
             Edit
           </button>
           <button
             onClick={() => onArchive(job.id)}
+            onDragStart={(e) => e.preventDefault()}
             className={`px-4 py-2 rounded-lg transition-colors ${
               job.status === 'archived' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-orange-600 hover:bg-orange-700 text-white'
             }`}
@@ -162,6 +143,7 @@ const DraggableJobCard = ({ job, index, candidateCount, onEdit, onArchive, onDel
           </button>
           <button
             onClick={() => onDelete(job)}
+            onDragStart={(e) => e.preventDefault()}
             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
             Delete
@@ -277,13 +259,16 @@ export default function Jobs() {
     // Optimistic update
     const newJobs = [...jobs];
     const [moved] = newJobs.splice(actualSourceIndex, 1);
-    newJobs.splice(actualDestIndex, 0, moved);
+    
+    // Adjust destination index when dragging down (removing an item shifts indices)
+    const adjustedDestIndex = dragIndex < hoverIndex ? actualDestIndex - 1 : actualDestIndex;
+    newJobs.splice(adjustedDestIndex, 0, moved);
     newJobs.forEach((job, idx) => (job.order = idx));
     setJobs(newJobs);
 
     // Persist - only one API call per drag operation
     try {
-      await jobsApi.reorderJob(movedJob.id, { fromOrder: actualSourceIndex, toOrder: actualDestIndex });
+      await jobsApi.reorderJob(movedJob.id, { fromOrder: actualSourceIndex, toOrder: adjustedDestIndex });
     } catch (error) {
       const rollback = await getJobs();
       setJobs(rollback);

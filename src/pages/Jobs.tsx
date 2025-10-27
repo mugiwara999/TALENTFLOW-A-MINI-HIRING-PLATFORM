@@ -29,11 +29,13 @@ interface DraggableJobCardProps {
 
 const DraggableJobCard = ({ job, index, candidateCount, onEdit, onArchive, onDelete, onMove, navigate }: DraggableJobCardProps) => {
   const ref = useRef<HTMLDivElement>(null);
+  const originalIndexRef = useRef<number>(index);
 
   const [{ isDragging }, drag] = useDrag(
     () => ({
       type: ITEM_TYPE,
       item: () => {
+        originalIndexRef.current = index;
         return { id: job.id, index } as DragItem;
       },
       collect: (monitor) => ({
@@ -88,9 +90,9 @@ const DraggableJobCard = ({ job, index, candidateCount, onEdit, onArchive, onDel
         // Time to actually perform the action
         item.index = hoverIndex;
       },
-      drop: (item: DragItem) => {
+      drop: () => {
         // Only call onMove when the drop actually happens
-        const dragIndex = item.index;
+        const dragIndex = originalIndexRef.current;
         const hoverIndex = index;
         if (dragIndex !== hoverIndex) {
           onMove(dragIndex, hoverIndex);

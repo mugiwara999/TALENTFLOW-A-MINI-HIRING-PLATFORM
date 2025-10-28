@@ -5,12 +5,10 @@ import App from './App.tsx'
 import { BrowserRouter } from 'react-router-dom'
 import { initializeStorage } from './utils/storage'
 
-if (import.meta.env.DEV) {
-  const { worker } = await import('./mocks/browser')
-  await worker.start({
-    onUnhandledRequest: 'bypass',
-  })
-}
+const { worker } = await import('./mocks/browser')
+await worker.start({
+  onUnhandledRequest: 'bypass',
+})
 
 await initializeStorage()
 

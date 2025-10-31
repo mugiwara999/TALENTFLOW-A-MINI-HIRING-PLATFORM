@@ -1,73 +1,133 @@
-# React + TypeScript + Vite
+# TALENTFLOW
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A minimal hiring platform built with React, TypeScript, and Vite for managing jobs, candidates, and assessments.
 
-Currently, two official plugins are available:
+## Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
 
-## React Compiler
+### Installation
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+# Install dependencies
+npm install
 
-## Expanding the ESLint configuration
+# Start development server
+npm run dev
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+# Build for production
+npm run build
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Preview production build
+npm run preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The application will be available at `http://localhost:5173`
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Features
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- **Jobs Board**: Create, edit, archive, and reorder job postings with deep linking
+- **Candidates**: Manage 1000+ candidates with virtualized lists, Kanban board, and status tracking
+- **Assessments**: Build custom assessments with multiple question types and live preview
+- **Notes & Mentions**: Add notes to candidates with @mention support
+- **Drag & Drop**: Reorder jobs and move candidates between stages
+
+## Architecture
+
+### Tech Stack
+- **Frontend**: React 18.3 + TypeScript
+- **Routing**: React Router DOM 7.9
+- **Styling**: Tailwind CSS 4
+- **Database**: Dexie (IndexedDB wrapper)
+- **Drag & Drop**: react-dnd
+- **API Mocking**: MSW (Mock Service Worker)
+
+### Project Structure
+
 ```
+src/
+├── components/       # Reusable UI components
+├── pages/           # Route-based page components
+├── services/        # API service layer
+├── mocks/           # MSW handlers and seed data
+├── types/           # TypeScript type definitions
+└── utils/           # Database and storage utilities
+```
+
+### Data Flow
+
+1. **IndexedDB (Dexie)**: Primary data persistence layer
+2. **MSW**: Intercepts API calls during development
+3. **Seed Data**: Auto-populates 1000+ candidates and sample jobs
+
+### Key Design Patterns
+
+- **Type Safety**: Strict TypeScript interfaces for all data models
+- **Optimistic Updates**: UI updates immediately, rolls back on error
+- **Client-side State**: All data managed in IndexedDB (no backend required)
+- **Component Composition**: Reusable components with clear responsibilities
+
+## Technical Decisions
+
+### Why Dexie (IndexedDB)?
+- Native browser storage with no server required
+- Supports large datasets (1000+ candidates)
+- Query capabilities with indexes
+- Observable changes and transactions
+
+### Why MSW?
+- Simulates backend API without actual server
+- Easy transition to real backend later
+- Enables offline development
+- Maintains realistic API contract
+
+### Why react-beautiful-dnd?
+- Mature library for drag-and-drop interactions
+- Accessible out of the box
+- Smooth animations and touch support
+- Used for job reordering and Kanban board
+
+### Why Tailwind CSS v4?
+- Utility-first approach for rapid development
+- Small production bundle size
+- Consistent design system
+- Vite plugin for better DX
+
+### Virtualization Strategy
+- `react-window` for efficiently rendering large candidate lists
+- Reduces DOM nodes and improves scroll performance
+- Lazy loading prevents initial render bottlenecks
+
+## Known Issues & Limitations
+
+### Current Limitations
+
+1. **No Backend**: All data stored in browser's IndexedDB
+   - Data is lost on cache clear
+   - No cross-device synchronization
+   - No real authentication
+
+2. **File Upload Stub**: File upload question type not fully implemented
+   - UI exists but no actual file storage
+   - Requires backend for production use
+
+3. **@Mentions Not Validated**: 
+   - Extracts mentions but doesn't validate against user list
+   - No autocomplete suggestions
+   - No notification system
+
+4. **Conditional Logic**: 
+   - Data structure exists but not rendered in preview
+   - Question dependencies not evaluated
+
+5. **No Real-time Collaboration**:
+   - Single-user application
+   - No conflict resolution
+   - No activity feed
+
+### Browser Compatibility
+- Modern browsers only (Chrome, Firefox, Safari, Edge)
+- Requires IndexedDB support
+- Service Workers for MSW in development

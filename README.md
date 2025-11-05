@@ -83,12 +83,6 @@ src/
 - Enables offline development
 - Maintains realistic API contract
 
-### Why react-beautiful-dnd?
-- Mature library for drag-and-drop interactions
-- Accessible out of the box
-- Smooth animations and touch support
-- Used for job reordering and Kanban board
-
 ### Why Tailwind CSS v4?
 - Utility-first approach for rapid development
 - Small production bundle size
